@@ -93,19 +93,19 @@ jobs:
 
           # list folders in my_stock/priv-app
           echo "List of folders in my_stock/priv-app"
-          ls -l mnt/my_stock/priv-app
+          ls -lh mnt/my_stock/priv-app
           echo
           # list folders in heytap/priv-app
           echo "List of folders in my_heytap/priv-app"
-          ls -l mnt/my_heytap/priv-app
+          ls -lh mnt/my_heytap/priv-app
           echo
           # list folders in my_stock/app
           echo "List of folders in my_stock/app"
-          ls -l mnt/my_stock/app
+          ls -lh mnt/my_stock/app
           echo
           # list folders in my_heytap/app
           echo "List of folders in my_heytap/app"
-          ls -l mnt/my_heytap/app
+          ls -lh mnt/my_heytap/app
           echo
 
           # update files
