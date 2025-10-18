@@ -1,5 +1,9 @@
 ## WalletFix4OOS14 更新日志
 
+## 2.2.3
+
+- update apps from OnePlus 12 ColorOS PJD110_15.0.0.860(CN01) C.82
+
 ## 2.2.2
 
 - update apps from OnePlus 12 ColorOS PJD110_15.0.0.832(CN01) C.79
