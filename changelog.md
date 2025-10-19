@@ -1,4 +1,4 @@
-## WalletFix4OOS14 更新日志
+## WalletFix4OOS 更新日志
 
 ## 2.2.3
 

@@ -78,12 +78,12 @@ jobs:
         run: |
           version="${{ needs.setup.outputs.version }}"
           versionCode="${{ needs.setup.outputs.versionCode }}"
-          zipUrl="https://github.com/geniucker-dev/WalletFix4OOS14/releases/download/${version}/${{ steps.zip.outputs.release }}"
+          zipUrl="https://github.com/geniucker-dev/WalletFix4OOS/releases/download/${version}/${{ steps.zip.outputs.release }}"
           echo '{
             "version": "'${version}'",
             "versionCode": '${versionCode}',
             "zipUrl": "'${zipUrl}'",
-            "changelog": "https://raw.githubusercontent.com/geniucker-dev/WalletFix4OOS14/main/changelog.md"
+            "changelog": "https://raw.githubusercontent.com/geniucker-dev/WalletFix4OOS/main/changelog.md"
           }' > update.json
 
           git config --global user.name "github-actions[bot]"
