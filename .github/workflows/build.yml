@@ -32,6 +32,13 @@ jobs:
         run: |
           git checkout ${{ inputs.ref }}
 
+          # update build.gradle.kts
+          version="${{ inputs.ref }}"
+          echo "Updating build.gradle.kts verName to ${version}"
+          # Replace the line that defines verName; do not commit here
+          sed -E -i "s/val verName by extra\\(\"[^\"]*\"\\)/val verName by extra(\"${version}\")/" build.gradle.kts
+
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
