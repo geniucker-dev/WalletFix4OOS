@@ -26,7 +26,7 @@
 
 ## 已知问题
 
-1. eid 不工作
+1. eid 不工作 (已找到原因及解决方法，见https://github.com/geniucker-dev/WalletFix4OOS/issues/13)
 
 ## License
 
