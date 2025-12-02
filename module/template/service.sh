@@ -6,6 +6,10 @@ if [ ! -d "$MODDIR/eid" ]; then
     exit 0
 fi
 
+until [ $(getprop sys.boot_completed) -eq 1 ] ; do
+  sleep 2
+done
+
 LIBPATH=/vendor/lib64:$MODDIR/eid/lib64
 if [ -d "$MODDIR/eid/lib" ]; then
     LIBPATH=$LIBPATH:$MODDIR/eid/lib
