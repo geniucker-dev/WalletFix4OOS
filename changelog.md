@@ -1,6 +1,11 @@
 ## WalletFix4OOS 更新日志
 
-## 2.2.4
+### 2.3.0
+
+feature:
+- Support custom target apps list via `/data/adb/walletfix/target.txt`
+
+### 2.2.4
 
 fix:
 - Support OxygenOS 16
@@ -11,11 +16,11 @@ changes:
 > **If OxygenOS 15 does not work, please use the previous version 2.2.3**
 > **如果OxygenOS 15无法使用，请使用上一个版本2.2.3**
 
-## 2.2.3
+### 2.2.3
 
 - update apps from OnePlus 12 ColorOS PJD110_15.0.0.860(CN01) C.82
 
-## 2.2.2
+### 2.2.2
 
 - update apps from OnePlus 12 ColorOS PJD110_15.0.0.832(CN01) C.79
 
