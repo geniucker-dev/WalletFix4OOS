@@ -1,0 +1,129 @@
+name: Update eID HAL files
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'URL of the full OTA update package.'
+        required: true
+      msg:
+        description: 'Message for the commit.'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: Update eID HAL files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        id: setup
+        run: |
+          echo FILENAME=$(basename "${{ github.event.inputs.url }}" | cut -d'?' -f1) >> $GITHUB_OUTPUT
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install git+https://github.com/geniucker-org/payload-dumper
+
+      - name: Download prebuild fuse.erofs
+        run: |
+          wget -O /tmp/erofs-utils.zip https://github.com/sekaiacg/erofs-utils/releases/download/v1.8.10-251024/erofs-utils-v1.8.10-g878e67d4-251024-Linux_x86_64.zip
+          unzip /tmp/erofs-utils.zip -d /tmp/erofs-utils
+          chmod -R +x /tmp/erofs-utils
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore cached odm.img
+        id: restore_cache_odm
+        uses: actions/cache/restore@v4
+        with:
+          path: output/odm.img
+          key: ${{ steps.setup.outputs.FILENAME }}-odm
+      
+      - name: Download odm partition from the OTA update
+        run: |
+          if [ ! -f output/odm.img ]; then
+            python -m payload_dumper --partitions odm "${{ github.event.inputs.url }}"
+          fi
+
+      - name: Save cache odm.img
+        if: ${{ steps.restore_cache_odm.outputs.cache-hit != 'true' }}
+        id: save_cache_odm
+        uses: actions/cache/save@v4
+        with:
+          path: output/odm.img
+          key: ${{ steps.restore_cache_odm.outputs.cache-primary-key }}
+
+      - name: Update files
+        run: |
+          # check if remote odm branch exists
+          if git fetch origin odm:odm; then
+            git checkout odm
+            git checkout --orphan odm-new
+          else
+            git checkout --orphan odm
+            git reset --hard
+          fi
+
+          # mount images
+          mkdir -p mnt
+          sudo /tmp/erofs-utils/fuse.erofs output/odm.img mnt
+
+          # use root due to permission issue of odm partition
+          sudo bash << 'EOF'
+
+          WORKDIR=$(pwd)
+
+          # parse MODEL from build.prop
+          MODEL=$(grep -m1 "^ro.build.product=" $WORKDIR/mnt/build.prop | cut -d "=" -f 2)
+          echo "model: $MODEL"
+
+          # clear old odm files
+          if [ -d $WORKDIR/$MODEL ]; then
+            rm -rf $WORKDIR/$MODEL
+          fi
+          mkdir -p $WORKDIR/odms/$MODEL
+
+          # show eID related files
+          (cd $WORKDIR/mnt; find . -name "*eid*" -type f -exec ls -l {} \;)
+
+          # copy eID related files
+          mkdir -p $WORKDIR/odms/$MODEL/odm
+          (cd $WORKDIR/mnt; find . -name "*eid*" -type f -exec cp --parents {} $WORKDIR/odms/$MODEL/odm/ \;)
+
+          # move folders other than odm/etc to eid/
+          mkdir -p $WORKDIR/odms/$MODEL/eid
+          find $WORKDIR/odms/$MODEL/odm -maxdepth 1 -mindepth 1 ! -name "etc" -exec mv {} $WORKDIR/odms/$MODEL/eid/ \;
+
+          # remove odm/etc/init
+          rm -rf $WORKDIR/odms/$MODEL/odm/etc/init
+          # rename executable files in eid/bin
+          find $WORKDIR/odms/$MODEL/eid/bin -name "*eid*" -type f -exec sh -c 'mv "$1" "$(dirname "$1")/eid_hal_server"' _ {} \;
+
+          EOF
+
+          # unmount images
+          sudo umount mnt
+    
+      - name: Cleanup
+        run: |
+          rm -rf mnt
+          rm -rf output
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # clear hystory
+          git add -A
+          git commit -m "${{ github.event.inputs.msg }}"
+          git push -f origin HEAD:odm

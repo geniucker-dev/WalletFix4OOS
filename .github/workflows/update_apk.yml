@@ -34,7 +34,7 @@ jobs:
 
       - name: Download prebuild fuse.erofs
         run: |
-          wget -O /tmp/erofs-utils.zip https://github.com/sekaiacg/erofs-utils/releases/download/v1.8.1-240810/erofs-utils-v1.8.1-gddbed144-Android_x86_64-2408101419.zip
+          wget -O /tmp/erofs-utils.zip https://github.com/sekaiacg/erofs-utils/releases/download/v1.8.10-251024/erofs-utils-v1.8.10-g878e67d4-251024-Linux_x86_64.zip
           unzip /tmp/erofs-utils.zip -d /tmp/erofs-utils
           chmod -R +x /tmp/erofs-utils
 
@@ -109,12 +109,6 @@ jobs:
           echo
 
           # update files
-          if [ -d product ]; then
-            rm -rf product
-          fi
-          if [ -d system ]; then
-            rm -rf system
-          fi
 
           mkdir -p product/priv-app
           cp -r mnt/my_stock/priv-app/KeKeUserCenter product/priv-app/
@@ -158,7 +152,7 @@ jobs:
       - name: Commit changes
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           # clear hystory
           git add -A
