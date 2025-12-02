@@ -58,9 +58,12 @@ jobs:
       - name: Get apks from apk branch
         run: |
           git fetch origin apk:apk
+          git fetch origin odm:odm
           git checkout apk -- product
+          git checkout odm -- odms
           mkdir -p module/template/system
           mv product module/template/system/
+          mv odms module/template/
 
       - name: Build with Gradle
         run: |

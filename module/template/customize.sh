@@ -70,6 +70,32 @@ for file in $(unzip -l "$ZIPFILE" | awk '{print $4}' | grep "^system/product/" |
   extract "$ZIPFILE" "$file" "$MODPATH"
 done
 
+ui_print "- Extracting device_map"
+extract "$ZIPFILE" "device_map" "$TMPDIR"
+MODEL=$(getprop ro.product.model)
+ui_print "- Device model: $MODEL"
+MODEL=$(grep -m1 "^$MODEL=" "$TMPDIR/device_map" | cut -d'=' -f2)
+
+# if MODEL mapping exists, use mapped value
+if [ -n "$MODEL" ]; then
+  MODEL="$MODEL"
+  ui_print "- Mapped device model: $MODEL"
+  ui_print "- eID fix will be applied!"
+  ui_print "- Extracting eID files for $MODEL"
+  # extract files in product
+  for file in $(unzip -l "$ZIPFILE" | awk '{print $4}' | grep "^odms/$MODEL/" | grep -v "/$" | grep -v ".sha256"); do
+    extract "$ZIPFILE" "$file" "$MODPATH"
+  done
+  mv "$MODPATH/odms/$MODEL/eid" "$MODPATH/"
+  # mount as vendor partition for better compatibility
+  mv "$MODPATH/odms/$MODEL/odm" "$MODPATH/system/vendor"
+  rm -rf "$MODPATH/odms"
+  ui_print "- eID files for $MODEL extracted!"
+else
+  ui_print "- eID fix not supported on this model yet!"
+  ui_print "- eID fix won't be applied!"
+fi
+
 HAS32BIT=false && [ $(getprop ro.product.cpu.abilist32) ] && HAS32BIT=true
 
 mkdir "$MODPATH/zygisk"
@@ -94,3 +120,13 @@ else
   extract "$ZIPFILE" "lib/arm64-v8a/lib$SONAME.so" "$MODPATH/zygisk" true
   mv "$MODPATH/zygisk/lib$SONAME.so" "$MODPATH/zygisk/arm64-v8a.so"
 fi
+
+ui_print "- Setting permissions"
+set_perm_recursive "$MODPATH/system/product" 0 0 0755 0644
+if [ -d "$MODPATH/eid" ]; then
+  set_perm_recursive "$MODPATH/eid" 0 0 0755 0644
+  set_perm_recursive "$MODPATH/eid/bin" 0 0 0755 0755
+  set_perm_recursive "$MODPATH/system/vendor" 0 0 0755 0644 u:object_r:vendor_file:s0
+  set_perm_recursive "$MODPATH/system/vendor/etc" 0 0 0755 0644 u:object_r:vendor_configs_file:s0
+fi
+
