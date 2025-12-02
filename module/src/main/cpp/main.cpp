@@ -30,7 +30,9 @@ using zygisk::ServerSpecializeArgs;
 #define LOGF(...) __android_log_print(ANDROID_LOG_FATAL, LOG_TAG, __VA_ARGS__)
 
 #define CONFIG_FILE "/data/adb/walletfix/spoof_vars"
+#define TARGET_FILE "/data/adb/walletfix/target.txt"
 #define DEFAULT_CONFIG "MODEL=PJD110"
+#define DEFAULT_TARGETS "com.finshell.wallet\ncom.unionpay.tsmservice"
 
 ssize_t xread(int fd, void *buffer, size_t count) {
     LOGD("xread, fd: %d, count: %zu", fd, count);
@@ -108,20 +110,32 @@ public:
 
         LOGD("process: %s", process.data());
 
-        std::vector<std::string_view> processes = {
-            "com.finshell.wallet",
-            "com.unionpay.tsmservice",
-        };
-        if (!std::any_of(processes.begin(), processes.end(), [&process](std::string_view p) {
-            return process.starts_with(p);
-        })) {
+        int fd = api->connectCompanion();
+        LOGD("connectCompanion: %d", fd);
+        if (fd < 0) {
             env->ReleaseStringUTFChars(args->app_data_dir, app_data_dir);
             env->ReleaseStringUTFChars(args->nice_name, nice_name);
             return;
         }
 
-        int fd = api->connectCompanion();
-        LOGD("connectCompanion: %d", fd);
+        // send process name to companion
+        int nameLen = (int)process.size();
+        xwrite(fd, &nameLen, sizeof(nameLen));
+        if (nameLen > 0) {
+            xwrite(fd, process.data(), process.size() * sizeof(uint8_t));
+        }
+
+        bool matched;
+        xread(fd, &matched, sizeof(matched));
+
+
+        if (!matched) {
+            env->ReleaseStringUTFChars(args->app_data_dir, app_data_dir);
+            env->ReleaseStringUTFChars(args->nice_name, nice_name);
+            close(fd);
+            return;
+        }
+
         int configSize;
         std::string configStr;
         xread(fd, &configSize, sizeof(configSize));
@@ -184,8 +198,24 @@ private:
         jclass versionClass = env->FindClass("android/os/Build$VERSION");
         LOGD("versionClass: %p", versionClass);
 
+        if (buildClass == nullptr || versionClass == nullptr) {
+            LOGE("Failed to find Build or Build$VERSION class");
+            if (buildClass) {
+                env->DeleteLocalRef(buildClass);
+            }
+            if (versionClass) {
+                env->DeleteLocalRef(versionClass);
+            }
+            return;
+        }
+
         for (auto &[key, val]: spoofVars) {
+            if (key.empty() || val.empty()) {
+                continue;
+            }
+
             const char *fieldName = key.c_str();
+            bool isVersionField = false;
 
             jfieldID fieldID = env->GetStaticFieldID(buildClass, fieldName, "Ljava/lang/String;");
 
@@ -198,22 +228,25 @@ private:
                     env->ExceptionClear();
                     continue;
                 }
+
+                isVersionField = true;
             }
 
             if (fieldID != nullptr) {
                 const char *value = val.c_str();
                 jstring jValue = env->NewStringUTF(value);
 
-                env->SetStaticObjectField(buildClass, fieldID, jValue);
+                env->SetStaticObjectField(isVersionField ? versionClass : buildClass, fieldID, jValue);
 
                 env->DeleteLocalRef(jValue);
 
                 if (env->ExceptionCheck()) {
                     env->ExceptionClear();
+                    LOGE("%s failed to set field '%s'", isVersionField ? "VERSION" : "Build", fieldName);
                     continue;
                 }
 
-                LOGI("Set '%s' to '%s'", fieldName, value);
+                LOGI("%s set '%s' to '%s'", isVersionField ? "VERSION" : "Build", fieldName, value);
             }
         }
 
@@ -240,6 +273,45 @@ static std::vector<uint8_t> readFile(const char *path) {
 
 static void companion_handler(int fd) {
     LOGD("companion_handler, fd: %d", fd);
+
+    // Read process name from fd
+    int processNameSize;
+    xread(fd, &processNameSize, sizeof(processNameSize));
+    bool matched = false;
+    if (processNameSize > 0) {
+        std::string processName;
+        processName.resize(processNameSize);
+        xread(fd, processName.data(), processNameSize * sizeof(uint8_t));
+        processName = split(processName, ":")[0]; // strip
+        LOGD("Process name: %s", processName.c_str());
+
+        // read target
+        auto targetStrBuf = readFile(TARGET_FILE);
+        std::string targetStr = std::string(targetStrBuf.begin(), targetStrBuf.end());
+        if (targetStr.empty()) {
+            LOGD("Using default target file");
+            targetStr = DEFAULT_TARGETS;
+        }
+        auto targets = split(targetStr, "\n");
+        for (auto &target: targets) {
+            target = trim(target);
+            LOGD("Target: %s", target.c_str());
+            if (processName == target) {
+                matched = true;
+                break;
+            }
+        }
+    }
+
+    // send bool matched
+    xwrite(fd, &matched, sizeof(matched));
+    if (!matched) {
+        LOGD("Process not matched, exiting companion_handler");
+        return;
+    }
+
+
+
     std::vector<uint8_t> config_data;
 
     config_data = readFile(CONFIG_FILE);
