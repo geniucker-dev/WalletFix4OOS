@@ -88,9 +88,14 @@ if [ -n "$MODEL" ]; then
   done
   mv "$MODPATH/odms/$MODEL/eid" "$MODPATH/"
   # mount as vendor partition for better compatibility
-  mv "$MODPATH/odms/$MODEL/odm" "$MODPATH/system/vendor"
+  # use odm for now
+  mv "$MODPATH/odms/$MODEL/odm" "$MODPATH/system/odm"
   rm -rf "$MODPATH/odms"
   ui_print "- eID files for $MODEL extracted!"
+  for folder in $(ls "$MODPATH/eid"); do
+    mv "$MODPATH/eid/$folder" "$MODPATH/system/odm/"
+  done
+  rm -rf "$MODPATH/eid"
 else
   ui_print "- eID fix not supported on this model yet!"
   ui_print "- eID fix won't be applied!"
@@ -123,10 +128,11 @@ fi
 
 ui_print "- Setting permissions"
 set_perm_recursive "$MODPATH/system/product" 0 0 0755 0644
-if [ -d "$MODPATH/eid" ]; then
-  set_perm_recursive "$MODPATH/eid" 0 0 0755 0644
-  set_perm_recursive "$MODPATH/eid/bin" 0 0 0755 0755
-  set_perm_recursive "$MODPATH/system/vendor" 0 0 0755 0644 u:object_r:vendor_file:s0
-  set_perm_recursive "$MODPATH/system/vendor/etc" 0 0 0755 0644 u:object_r:vendor_configs_file:s0
+if [ -d "$MODPATH/system/odm" ]; then
+  set_perm_recursive "$MODPATH/system/odm" 0 0 0755 0644 u:object_r:vendor_file:s0
+  set_perm_recursive "$MODPATH/system/odm/bin" 0 2000 0755 0755 u:object_r:hal_eid_oplus_exec:s0
+  set_perm "$MODPATH/system/odm/bin/hw" 0 0 0755 0755 u:object_r:vendor_file:s0
+  set_perm "$MODPATH/system/odm/bin" 0 0 0755 0755 u:object_r:vendor_file:s0
+  set_perm_recursive "$MODPATH/system/odm/etc" 0 0 0755 0644 u:object_r:vendor_configs_file:s0
 fi
-
+ls -laRZ "$MODPATH/system/odm"
