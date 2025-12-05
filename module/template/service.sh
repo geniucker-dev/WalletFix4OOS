@@ -5,7 +5,7 @@ LOG_FILE="$MODDIR/service.log"
 SERVER_LOG_FILE="$MODDIR/eid_hal_server.log"
 exec >"$LOG_FILE" 2>&1
 
-if [ ! -d "$MODDIR/system/odm" ]; then
+if [ ! -d "$MODDIR/system/vendor" ]; then
     echo "eID files not found! Exiting..."
     exit 0
 fi
@@ -26,7 +26,7 @@ while [ $attempt -le $MAX_RETRIES ]; do
         break
     fi
     echo "Starting eid_hal_server attempt $attempt/$MAX_RETRIES"
-    /odm/bin/hw/eid_hal_server >"$SERVER_LOG_FILE" 2>&1 &
+    /vendor/bin/hw/eid_hal_server >"$SERVER_LOG_FILE" 2>&1 &
     sleep $RETRY_DELAY
     attempt=$((attempt + 1))
 done
@@ -34,7 +34,7 @@ done
 if ! pgrep -f "eid_hal_server" >/dev/null 2>&1; then
     echo "Failed to start eid_hal_server after $MAX_RETRIES attempts"
     # run again and print exit code
-    /odm/bin/hw/eid_hal_server >"$SERVER_LOG_FILE" 2>&1
+    /vendor/bin/hw/eid_hal_server >"$SERVER_LOG_FILE" 2>&1
     echo "eid_hal_server exited with code $?"
 else
     echo "eid_hal_server started successfully"
