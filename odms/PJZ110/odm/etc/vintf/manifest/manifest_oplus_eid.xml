@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*************************************************************
+ ** OPLUS_FEATURE_SECURITY_COMMON
+ ** Copyright (C), 2008-2020, OPLUS Mobile Comm Corp., Ltd
+ **
+ ** Description : 1.0
+ **           This is a common file
+ **
+ ** Version: 1.0
+ ** Date created: 12:00, 2020/05/22
+ ** Author: Qingjun.Wang@Tech.AD.Performance
+ **
+ ** Revision History:
+ **      <author>        <date>                    <desc>
+ **      Wei.Dai         2022/05/08                modify for convert hidl to aidl
+ *************************************************************/
+-->
+<manifest version="1.0" type="device">
+    <hal format="aidl">
+        <name>vendor.oplus.hardware.eid</name>
+        <version>1</version>
+        <interface>
+            <name>IEidDevice</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+</manifest>
