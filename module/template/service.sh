@@ -11,12 +11,12 @@ if [ ! -d "$MODDIR/system/vendor" ]; then
 fi
 
 
-until [ $(getprop sys.boot_completed) -eq 1 ] ; do
-  sleep 2
+until [ "$(getprop sys.boot_completed)" -eq 1 ] ; do
+  sleep 3
 done
 
 
-MAX_RETRIES=3
+MAX_RETRIES=10
 RETRY_DELAY=5
 attempt=1
 

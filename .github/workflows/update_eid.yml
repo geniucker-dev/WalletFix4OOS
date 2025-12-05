@@ -83,8 +83,13 @@ jobs:
           WORKDIR=$(pwd)
 
           # parse MODEL from build.prop
-          MODEL=$(grep -m1 "^ro.build.product=" $WORKDIR/mnt/build.prop | cut -d "=" -f 2)
+          MODEL=$(grep -m1 "^ro.vendor.product.oem=" $WORKDIR/mnt/build.prop | cut -d "=" -f 2)
           echo "model: $MODEL"
+          # if empty model, exit with error
+          if [ -z "$MODEL" ]; then
+            echo "Error: Unable to parse model from build.prop"
+            exit 1
+          fi
 
           # clear old odm files
           if [ -d $WORKDIR/odms/$MODEL ]; then
