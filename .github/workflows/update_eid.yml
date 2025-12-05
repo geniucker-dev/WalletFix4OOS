@@ -87,8 +87,8 @@ jobs:
           echo "model: $MODEL"
 
           # clear old odm files
-          if [ -d $WORKDIR/$MODEL ]; then
-            rm -rf $WORKDIR/$MODEL
+          if [ -d $WORKDIR/odms/$MODEL ]; then
+            rm -rf $WORKDIR/odms/$MODEL
           fi
           mkdir -p $WORKDIR/odms/$MODEL
 
@@ -98,15 +98,6 @@ jobs:
           # copy eID related files
           mkdir -p $WORKDIR/odms/$MODEL/odm
           (cd $WORKDIR/mnt; find . -name "*eid*" -type f -exec cp --parents {} $WORKDIR/odms/$MODEL/odm/ \;)
-
-          # move folders other than odm/etc to eid/
-          mkdir -p $WORKDIR/odms/$MODEL/eid
-          find $WORKDIR/odms/$MODEL/odm -maxdepth 1 -mindepth 1 ! -name "etc" -exec mv {} $WORKDIR/odms/$MODEL/eid/ \;
-
-          # remove odm/etc/init
-          rm -rf $WORKDIR/odms/$MODEL/odm/etc/init
-          # rename executable files in eid/bin
-          find $WORKDIR/odms/$MODEL/eid/bin -name "*eid*" -type f -exec sh -c 'mv "$1" "$(dirname "$1")/eid_hal_server"' _ {} \;
 
           EOF
 
