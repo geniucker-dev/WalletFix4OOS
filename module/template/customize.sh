@@ -130,9 +130,9 @@ fi
 ui_print "- Setting permissions"
 set_perm_recursive "$MODPATH/system/product" 0 0 0755 0644
 if [ -d "$MODPATH/system/vendor" ]; then
-  set_perm_recursive "$MODPATH/system/vendor" 0 0 0755 0644 u:object_r:vendor_file:s0
-  set_perm_recursive "$MODPATH/system/vendor/bin" 0 0 0751 0755 u:object_r:vendor_file:s0
-  set_perm "$MODPATH/system/vendor/bin/hw/$REAL_EID_HAL_SERVER_FILENAME" 0 2000 0755 0755 u:object_r:hal_eid_oplus_exec:s0
-  set_perm_recursive "$MODPATH/system/vendor/etc" 0 0 0755 0644 u:object_r:vendor_configs_file:s0
+  set_perm_recursive "$MODPATH/system/vendor" 0 2000 0755 0644 u:object_r:vendor_file:s0
+  set_perm_recursive "$MODPATH/system/vendor/bin" 0 2000 0751 0755 u:object_r:vendor_file:s0
+  set_perm "$MODPATH/system/vendor/bin/hw/$REAL_EID_HAL_SERVER_FILENAME" 0 2000 0755 u:object_r:hal_eid_oplus_exec:s0
+  set_perm_recursive "$MODPATH/system/vendor/etc" 0 2000 0755 0644 u:object_r:vendor_configs_file:s0
 fi
 ls -laRZ "$MODPATH/system/vendor"
